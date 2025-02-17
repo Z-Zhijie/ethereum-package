@@ -162,7 +162,7 @@ def get_config(
         "--metrics-enabled=true",
         "--metrics-host=0.0.0.0",
         "--metrics-port={0}".format(METRICS_PORT_NUM),
-        "--min-gas-price=1000000000",
+        "--min-gas-price=1",
         "--bonsai-limit-trie-logs-enabled=false"
         if "verkle" not in launcher.network
         else "",
