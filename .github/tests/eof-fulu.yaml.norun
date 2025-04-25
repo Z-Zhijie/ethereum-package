@@ -21,7 +21,7 @@ network_params:
 
 additional_services:
   - dora
-  - tx_spammer
-  - spamoor_blob
+  - tx_fuzz
+  - spamoor
 
 snooper_enabled: true

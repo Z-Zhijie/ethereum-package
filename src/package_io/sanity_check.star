@@ -106,6 +106,7 @@ PARTICIPANT_MATRIX_PARAMS = {
             "vc_max_mem",
             "validator_count",
             "count",
+            "supernode",
         ],
         "vc": [
             "vc_type",
@@ -169,11 +170,15 @@ SUBCATEGORY_PARAMS = {
         "target_blobs_per_block_electra",
         "max_blobs_per_block_fulu",
         "target_blobs_per_block_fulu",
+        "base_fee_update_fraction_electra",
+        "base_fee_update_fraction_fulu",
         "preset",
         "additional_preloaded_contracts",
         "devnet_repo",
         "prefunded_accounts",
-        "gossip_max_size",
+        "max_payload_size",
+        "perfect_peerdas_enabled",
+        "gas_limit",
     ],
     "blockscout_params": [
         "image",
@@ -191,9 +196,9 @@ SUBCATEGORY_PARAMS = {
         "github_prefix",
         "google_prefix",
     ],
-    "tx_spammer_params": [
+    "tx_fuzz_params": [
         "image",
-        "tx_spammer_extra_args",
+        "tx_fuzz_extra_args",
     ],
     "prometheus_params": [
         "min_cpu",
@@ -226,6 +231,7 @@ SUBCATEGORY_PARAMS = {
         "mev_relay_image",
         "mev_builder_image",
         "mev_builder_cl_image",
+        "mev_builder_subsidy",
         "mev_boost_image",
         "mev_boost_args",
         "mev_relay_api_extra_args",
@@ -248,20 +254,8 @@ SUBCATEGORY_PARAMS = {
     ],
     "spamoor_params": [
         "image",
-        "scenario",
-        "throughput",
-        "max_pending",
-        "max_wallets",
-        "spamoor_extra_args",
-    ],
-    "spamoor_blob_params": [
-        "image",
-        "scenario",
-        "throughput",
-        "max_blobs",
-        "max_pending",
-        "max_wallets",
-        "spamoor_extra_args",
+        "extra_args",
+        "spammers",
     ],
     "ethereum_genesis_generator_params": [
         "image",
@@ -279,12 +273,10 @@ SUBCATEGORY_PARAMS = {
 ADDITIONAL_SERVICES_PARAMS = [
     "assertoor",
     "broadcaster",
-    "tx_spammer",
-    "blob_spammer",
+    "tx_fuzz",
     "custom_flood",
-    "el_forkmon",
+    "forkmon",
     "blockscout",
-    "beacon_metrics_gazer",
     "dora",
     "full_beaconchain_explorer",
     "prometheus_grafana",
@@ -295,7 +287,6 @@ ADDITIONAL_SERVICES_PARAMS = [
     "apache",
     "tracoor",
     "spamoor",
-    "spamoor_blob",
 ]
 
 ADDITIONAL_CATEGORY_PARAMS = {
