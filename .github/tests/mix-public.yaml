@@ -15,6 +15,7 @@ participants:
   - el_type: ethereumjs
     cl_type: grandine
 port_publisher:
+  nat_exit_ip: KURTOSIS_IP_ADDR_PLACEHOLDER
   el:
     enabled: true
     public_port_start: 40000
@@ -40,7 +41,8 @@ additional_services:
   - tx_fuzz
   - forkmon
   - dora
-  - prometheus_grafana
+  - prometheus
+  - grafana
   - custom_flood
   - blobscan
   - dugtrio
@@ -51,6 +53,3 @@ additional_services:
 ethereum_metrics_exporter_enabled: true
 snooper_enabled: true
 keymanager_enabled: true
-docker_cache_params:
-  enabled: true
-  url: "docker.ethquokkaops.io"

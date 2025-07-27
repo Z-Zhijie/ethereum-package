@@ -21,6 +21,7 @@ blobscan = import_module("./src/blobscan/blobscan_launcher.star")
 forky = import_module("./src/forky/forky_launcher.star")
 tracoor = import_module("./src/tracoor/tracoor_launcher.star")
 apache = import_module("./src/apache/apache_launcher.star")
+nginx = import_module("./src/nginx/nginx_launcher.star")
 full_beaconchain_explorer = import_module(
     "./src/full_beaconchain/full_beaconchain_launcher.star"
 )
@@ -46,7 +47,6 @@ flashbots_mev_relay = import_module(
     "./src/mev/flashbots/mev_relay/mev_relay_launcher.star"
 )
 mock_mev = import_module("./src/mev/flashbots/mock_mev/mock_mev_launcher.star")
-mev_flood = import_module("./src/mev/flashbots/mev_flood/mev_flood_launcher.star")
 mev_custom_flood = import_module(
     "./src/mev/flashbots/mev_custom_flood/mev_custom_flood_launcher.star"
 )
@@ -87,7 +87,19 @@ def run(plan, args={}):
     global_node_selectors = args_with_right_defaults.global_node_selectors
     keymanager_enabled = args_with_right_defaults.keymanager_enabled
     apache_port = args_with_right_defaults.apache_port
+    nginx_port = args_with_right_defaults.nginx_port
     docker_cache_params = args_with_right_defaults.docker_cache_params
+
+    for index, participant in enumerate(args_with_right_defaults.participants):
+        if (
+            num_participants == 1
+            and participant.cl_type == constants.CL_TYPE.lighthouse
+        ):
+            if (
+                "--target-peers=0" not in participant.cl_extra_params
+                and network_params.network == constants.NETWORK_NAME.kurtosis
+            ):
+                participant.cl_extra_params.append("--target-peers=0")
 
     prefunded_accounts = genesis_constants.PRE_FUNDED_ACCOUNTS
     if (
@@ -302,15 +314,6 @@ def run(plan, args={}):
 
         first_cl_client = all_cl_contexts[0]
         first_client_beacon_name = first_cl_client.beacon_service_name
-        contract_owner, normal_user = prefunded_accounts[6:8]
-        mev_flood.launch_mev_flood(
-            plan,
-            mev_params.mev_flood_image,
-            all_el_contexts[-1].rpc_http_url,  # Only spam builder
-            contract_owner.private_key,
-            normal_user.private_key,
-            global_node_selectors,
-        )
         if (
             args_with_right_defaults.mev_type == constants.FLASHBOTS_MEV_TYPE
             or args_with_right_defaults.mev_type == constants.COMMIT_BOOST_MEV_TYPE
@@ -342,14 +345,6 @@ def run(plan, args={}):
         else:
             fail("Invalid MEV type")
 
-        mev_flood.spam_in_background(
-            plan,
-            all_el_contexts[-1].rpc_http_url,  # Only spam builder
-            mev_params.mev_flood_extra_args,
-            mev_params.mev_flood_seconds_per_bundle,
-            contract_owner.private_key,
-            normal_user.private_key,
-        )
         mev_endpoints.append(endpoint)
         mev_endpoint_names.append(args_with_right_defaults.mev_type)
 
@@ -520,6 +515,7 @@ def run(plan, args={}):
                 mev_endpoint_names,
                 args_with_right_defaults.port_publisher,
                 index,
+                args_with_right_defaults.docker_cache_params,
             )
             plan.print("Successfully launched dora")
         elif additional_service == "dugtrio":
@@ -623,6 +619,20 @@ def run(plan, args={}):
                 args_with_right_defaults.docker_cache_params,
             )
             plan.print("Successfully launched apache")
+        elif additional_service == "nginx":
+            plan.print("Launching nginx")
+            nginx.launch_nginx(
+                plan,
+                el_cl_data_files_artifact_uuid,
+                nginx_port,
+                all_participants,
+                args_with_right_defaults.participants,
+                args_with_right_defaults.port_publisher,
+                index,
+                global_node_selectors,
+                args_with_right_defaults.docker_cache_params,
+            )
+            plan.print("Successfully launched nginx")
         elif additional_service == "full_beaconchain_explorer":
             plan.print("Launching full-beaconchain-explorer")
             full_beaconchain_explorer_config_template = read_file(
@@ -640,6 +650,37 @@ def run(plan, args={}):
                 index,
             )
             plan.print("Successfully launched full-beaconchain-explorer")
+        elif additional_service == "prometheus":
+            plan.print("Launching prometheus...")
+            prometheus_private_url = prometheus.launch_prometheus(
+                plan,
+                all_el_contexts,
+                all_cl_contexts,
+                all_vc_contexts,
+                network_params,
+                all_remote_signer_contexts,
+                prometheus_additional_metrics_jobs,
+                all_ethereum_metrics_exporter_contexts,
+                all_xatu_sentry_contexts,
+                global_node_selectors,
+                args_with_right_defaults.prometheus_params,
+                args_with_right_defaults.port_publisher,
+                index,
+            )
+            plan.print("Successfully launched prometheus")
+        elif additional_service == "grafana":
+            plan.print("Launching grafana...")
+            grafana.launch_grafana(
+                plan,
+                grafana_datasource_config_template,
+                grafana_dashboards_config_template,
+                prometheus_private_url,
+                global_node_selectors,
+                args_with_right_defaults.grafana_params,
+                args_with_right_defaults.port_publisher,
+                index,
+            )
+            plan.print("Successfully launched grafana")
         elif additional_service == "prometheus_grafana":
             # Allow prometheus to be launched last so is able to collect metrics from other services
             launch_prometheus_grafana = True
@@ -660,6 +701,7 @@ def run(plan, args={}):
                 args_with_right_defaults.port_publisher,
                 index,
                 global_node_selectors,
+                args_with_right_defaults.docker_cache_params,
             )
             plan.print("Successfully launched assertoor")
         elif additional_service == "custom_flood":
@@ -677,9 +719,13 @@ def run(plan, args={}):
             spamoor_config_template = read_file(
                 static_files.SPAMOOR_CONFIG_TEMPLATE_FILEPATH
             )
+            spamoor_hosts_template = read_file(
+                static_files.SPAMOOR_HOSTS_TEMPLATE_FILEPATH
+            )
             spamoor.launch_spamoor(
                 plan,
                 spamoor_config_template,
+                spamoor_hosts_template,
                 prefunded_accounts,
                 all_participants,
                 args_with_right_defaults.participants,
@@ -699,6 +745,7 @@ def run(plan, args={}):
             all_el_contexts,
             all_cl_contexts,
             all_vc_contexts,
+            network_params,
             all_remote_signer_contexts,
             prometheus_additional_metrics_jobs,
             all_ethereum_metrics_exporter_contexts,
